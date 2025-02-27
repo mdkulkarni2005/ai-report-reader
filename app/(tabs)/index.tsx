@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, Modal, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, Image, TextInput, ScrollView, Modal, View, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@/config/apiKeys';
+import { useRouter } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -25,6 +27,7 @@ const LANGUAGES = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [image, setImage] = useState(null);
   const [textInput, setTextInput] = useState('');
   const [result, setResult] = useState('');
@@ -37,9 +40,16 @@ export default function HomeScreen() {
   // Request permissions on component mount
   useEffect(() => {
     (async () => {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!');
+      // Request camera roll permission
+      const { status: mediaStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (mediaStatus !== 'granted') {
+        Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to make this work!');
+      }
+      
+      // Request camera permission
+      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+      if (cameraStatus !== 'granted') {
+        Alert.alert('Permission Required', 'Sorry, we need camera permissions to make this work!');
       }
     })();
   }, []);
@@ -81,6 +91,23 @@ export default function HomeScreen() {
     if (!result.canceled) {
       setImage(result.assets[0].uri);
     }
+  };
+  
+  // Handle text input function
+  const handleTextInputFocus = () => {
+    // Placeholder for future voice feature
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Alert.alert(
+        "Voice Input", 
+        "Voice input feature has been disabled.",
+        [{ text: "OK" }]
+      );
+    }
+  };
+  
+  // Navigate to disclaimer screen
+  const openDisclaimer = () => {
+    router.push('/disclaimer');
   };
 
   // Speak text in selected language
@@ -176,8 +203,11 @@ export default function HomeScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title" style={styles.appTitle}>Image AI Analyzer</ThemedText>
-        <ThemedText style={styles.appSubtitle}>Analyze images with Google Gemini AI</ThemedText>
+        <ThemedText type="title" style={styles.appTitle}>AI Report Reader</ThemedText>
+        <ThemedText style={styles.appSubtitle}>Analyze images with AI</ThemedText>
+        <TouchableOpacity style={styles.disclaimerButton} onPress={openDisclaimer}>
+          <FontAwesome name="info-circle" size={20} color="white" />
+        </TouchableOpacity>
       </View>
       
       <ThemedView style={styles.content}>
@@ -225,14 +255,21 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           
-          <TextInput
-            style={styles.textInput}
-            placeholder="What would you like to know about this image?"
-            placeholderTextColor="#999"
-            value={textInput}
-            onChangeText={setTextInput}
-            multiline
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="What would you like to know about this image?"
+              placeholderTextColor="#999"
+              value={textInput}
+              onChangeText={setTextInput}
+              multiline
+            />
+            <TouchableOpacity 
+              style={styles.micButton}
+              onPress={handleTextInputFocus}
+            >
+            </TouchableOpacity>
+          </View>
           
           <TouchableOpacity 
             style={[styles.analyzeButton, isLoading && styles.disabledButton]}
@@ -240,7 +277,7 @@ export default function HomeScreen() {
             disabled={isLoading}
           >
             <ThemedText style={styles.analyzeButtonText}>
-              {isLoading ? "Analyzing..." : "Analyze with Gemini AI"}
+              {isLoading ? "Analyzing..." : "Analyze Image"}
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>
@@ -334,6 +371,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 5,
+    position: 'relative',
   },
   appTitle: {
     fontSize: 28,
@@ -346,11 +384,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(255,255,255,0.9)',
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  disclaimerButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
-    padding: 16,
-    gap: 20,
-    marginTop: 10,
+    padding: 20,
+    gap: 16,
   },
   card: {
     backgroundColor: 'white',
@@ -365,12 +414,12 @@ const styles = StyleSheet.create({
   imageContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 250,
-    backgroundColor: '#f8f9fa',
+    height: 300,
+    backgroundColor: '#f0f0f0',
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#ddd',
     marginBottom: 16,
   },
   image: {
@@ -451,14 +500,20 @@ const styles = StyleSheet.create({
     color: '#555',
     fontSize: 14,
   },
+  inputContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    position: 'relative',
+  },
   textInput: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 12,
     padding: 16,
+    paddingRight: 50, // Space for microphone button
     minHeight: 120,
     textAlignVertical: 'top',
-    marginBottom: 16,
     backgroundColor: 'white',
     color: '#333',
     fontSize: 16,
@@ -467,6 +522,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.02,
     shadowRadius: 2,
     elevation: 1,
+  },
+  micButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  listeningButton: {
+    backgroundColor: '#feeae6',
+    borderColor: '#ffccc7',
+  },
+  micButtonText: {
+    fontSize: 20,
   },
   analyzeButton: {
     backgroundColor: '#34A853',

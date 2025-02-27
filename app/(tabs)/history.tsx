@@ -4,6 +4,7 @@ import * as Speech from 'expo-speech';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAnalyzer } from '@/context/AnalyzerContext';
+import { FontAwesome } from '@expo/vector-icons';
 
 export default function HistoryScreen() {
   const { history } = useAnalyzer();
@@ -59,8 +60,11 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>Conversation History</ThemedText>
-        <ThemedText style={styles.subtitle}>Your AI analysis conversations</ThemedText>
+        <View style={styles.logoCircle}>
+          <FontAwesome name="eye" size={30} color="#ffffff" />
+        </View>
+        <ThemedText type="title" style={styles.title}>AI Report Reader</ThemedText>
+        <ThemedText style={styles.subtitle}>Previous Analysis History</ThemedText>
       </View>
       
       {history.length === 0 ? (
@@ -146,7 +150,7 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#1a1a2e',
   },
   header: {
     paddingVertical: 30,
@@ -160,6 +164,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 5,
+  },
+  logoCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   title: {
     fontSize: 28,
